@@ -25,8 +25,8 @@ export default {
     if (url.pathname === "/api/clone-voice" && request.method === "POST") {
       try {
         const formData = await request.formData();
-        
-        // Forward the audio file to ElevenLabs to create an instant voice clone
+
+        // --- PAID PLAN CODE ---
         const elResponse = await fetch("https://api.elevenlabs.io/v1/voices/add", {
           method: "POST",
           headers: {
@@ -34,7 +34,7 @@ export default {
           },
           body: formData
         });
-        
+
         const data = await elResponse.json();
         return new Response(JSON.stringify(data), {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -63,7 +63,7 @@ export default {
 
 // Phase 3: The Real-Time Translation Pipeline (Durable Object)
 export class BabelRoom extends DurableObject {
-  sessions: Map<WebSocket, { voiceId: string, targetLang: string }> = new Map();
+  sessions: Map<WebSocket, { voiceId: string, targetLang: string, userProfile?: any }> = new Map();
   env: Env;
 
   constructor(ctx: DurableObjectState, env: Env) {
@@ -88,11 +88,57 @@ export class BabelRoom extends DurableObject {
     this.sessions.set(server, { voiceId, targetLang });
 
     server.accept();
-    
+
     server.addEventListener("message", async (event) => {
       try {
+        // Differentiate between JSON config and Binary audio data
+        if (typeof event.data === "string") {
+          const msg = JSON.parse(event.data);
+          if (msg.type === "config") {
+            const info = this.sessions.get(server);
+            if (info && msg.userProfile) {
+
+              // 1. Evict any ghost connections from this exact user
+              for (const [existingSocket, existingInfo] of this.sessions.entries()) {
+                if (existingSocket !== server && existingInfo.userProfile?.email === msg.userProfile.email) {
+                  try { existingSocket.close(1008, "Replaced by new connection"); } catch (e) { }
+                  this.sessions.delete(existingSocket);
+                }
+              }
+
+              // 2. Enforce the max 2 room limit NOW that ghosts are cleared
+              let otherUsersCount = 0;
+              for (const [existingSocket] of this.sessions.entries()) {
+                if (existingSocket !== server) otherUsersCount++;
+              }
+
+              if (otherUsersCount >= 2) {
+                server.send(JSON.stringify({ type: "error", message: "Room is full. Maximum 2 participants allowed." }));
+                server.close(1008, "Room full");
+                this.sessions.delete(server);
+                return;
+              }
+
+              // 3. Keep the session
+              info.voiceId = msg.voiceId;
+              info.targetLang = msg.targetLang;
+              info.userProfile = msg.userProfile;
+            }
+            this.broadcastPeers();
+          } else if (msg.type === "is_speaking") {
+            for (const [session] of this.sessions.entries()) {
+              if (session !== server) {
+                try { session.send(JSON.stringify({ type: "remote_speaking", status: msg.status })); } catch (e) { }
+              }
+            }
+          }
+          return; // Do not pass string config to Whisper
+        }
+
         // Step 1: Audio Capture received from Frontend
         const audioBytes = event.data as ArrayBuffer;
+        if (!audioBytes || audioBytes.byteLength === 0) return;
+
         const senderInfo = this.sessions.get(server);
 
         if (!senderInfo) return;
@@ -132,18 +178,21 @@ export class BabelRoom extends DurableObject {
               });
               if (ttsResponse.ok) {
                 audioBuffer = await ttsResponse.arrayBuffer();
+              } else {
+                const errText = await ttsResponse.text();
+                server.send(JSON.stringify({ type: "error", message: `ElevenLabs TTS Failed. Are you out of Free Tier credits?: ${errText}` }));
               }
             }
 
             // Step 5: Playback (Send back to Frontend)
             // First send the transcript metadata
-            session.send(JSON.stringify({ 
-              type: "transcript", 
-              original: text, 
+            session.send(JSON.stringify({
+              type: "transcript",
+              original: text,
               translated: translatedText,
               senderVoiceId: senderInfo.voiceId
             }));
-            
+
             // Then send the audio bytes if available
             if (audioBuffer) {
               session.send(audioBuffer);
@@ -158,8 +207,23 @@ export class BabelRoom extends DurableObject {
 
     server.addEventListener("close", () => {
       this.sessions.delete(server);
+      this.broadcastPeers();
     });
 
     return new Response(null, { status: 101, webSocket: client });
+  }
+
+  broadcastPeers() {
+    const peers: any[] = [];
+    for (const info of this.sessions.values()) {
+      if (info.userProfile) peers.push(info.userProfile);
+    }
+
+    const msg = JSON.stringify({ type: "peers_update", peers });
+    for (const session of this.sessions.keys()) {
+      try {
+        session.send(msg);
+      } catch (err) { }
+    }
   }
 }

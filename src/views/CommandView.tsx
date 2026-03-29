@@ -8,10 +8,11 @@ interface Props {
   setRoomId: (id: string) => void;
   targetLang: string;
   roomId: string;
+  userProfile?: any;
   key?: React.Key;
 }
 
-export function CommandView({ onNext, setTargetLang, setRoomId, targetLang, roomId }: Props) {
+export function CommandView({ onNext, setTargetLang, setRoomId, targetLang, roomId, userProfile }: Props) {
   const [inputRoomId, setInputRoomId] = useState(roomId);
 
   const handleJoin = () => {
@@ -20,7 +21,7 @@ export function CommandView({ onNext, setTargetLang, setRoomId, targetLang, room
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
@@ -48,7 +49,7 @@ export function CommandView({ onNext, setTargetLang, setRoomId, targetLang, room
                 <p className="font-mono text-xl text-primary-cyan">1.4 GB/S</p>
               </div>
             </div>
-            
+
             <div className="mt-8 flex-1 relative min-h-[160px]">
               <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary-cyan via-transparent to-transparent"></div>
               <div className="flex items-end gap-1 h-24 absolute bottom-0 left-0 w-full">
@@ -66,8 +67,8 @@ export function CommandView({ onNext, setTargetLang, setRoomId, targetLang, room
             <div className="flex flex-col md:flex-row justify-between items-end md:items-center mt-6 gap-4">
               <div className="flex flex-col gap-2 w-full md:w-auto">
                 <label className="font-mono text-[10px] text-slate-500 uppercase">Room ID</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={inputRoomId}
                   onChange={(e) => setInputRoomId(e.target.value)}
                   className="bg-surface-high border border-white/10 text-white font-mono text-sm px-4 py-2 w-full md:w-64 focus:outline-none focus:border-primary-cyan transition-colors"
@@ -76,16 +77,21 @@ export function CommandView({ onNext, setTargetLang, setRoomId, targetLang, room
               </div>
               <div className="flex flex-col gap-2 w-full md:w-auto">
                 <label className="font-mono text-[10px] text-slate-500 uppercase">Target Language</label>
-                <select 
+                <select
                   value={targetLang}
                   onChange={(e) => setTargetLang(e.target.value)}
-                  className="bg-surface-high border border-white/10 text-white font-mono text-sm px-4 py-2 w-full md:w-48 focus:outline-none focus:border-primary-cyan transition-colors appearance-none"
+                  className="w-full bg-black/50 border border-white/10 p-3 font-space text-lg text-white uppercase tracking-widest focus:border-primary-cyan outline-none transition-colors"
                 >
-                  <option value="ja">Japanese (ja)</option>
-                  <option value="es">Spanish (es)</option>
-                  <option value="fr">French (fr)</option>
-                  <option value="de">German (de)</option>
-                  <option value="zh">Chinese (zh)</option>
+                  <option value="en">ENGLISH (EN)</option>
+                  <option value="es">SPANISH (ES)</option>
+                  <option value="fr">FRENCH (FR)</option>
+                  <option value="de">GERMAN (DE)</option>
+                  <option value="it">ITALIAN (IT)</option>
+                  <option value="pt">PORTUGUESE (PT)</option>
+                  <option value="hi">HINDI (HI)</option>
+                  <option value="ja">JAPANESE (JP)</option>
+                  <option value="ko">KOREAN (KR)</option>
+                  <option value="zh">CHINESE (CN)</option>
                 </select>
               </div>
               <button onClick={handleJoin} className="bg-white text-black px-8 py-3 font-mono text-xs font-black hover:bg-primary-cyan transition-colors w-full md:w-auto mt-4 md:mt-0">

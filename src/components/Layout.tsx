@@ -5,9 +5,11 @@ interface LayoutProps {
   children: React.ReactNode;
   setView: (view: string) => void;
   currentView: string;
+  userProfile?: any;
+  clearSession?: () => void;
 }
 
-export function Layout({ children, setView, currentView }: LayoutProps) {
+export function Layout({ children, setView, currentView, userProfile, clearSession }: LayoutProps) {
   return (
     <div className="min-h-screen bg-surface text-gray-200 font-inter selection:bg-primary-cyan/30 selection:text-primary-cyan">
       {/* Top Navigation */}
@@ -24,17 +26,27 @@ export function Layout({ children, setView, currentView }: LayoutProps) {
           <button className="text-slate-400 hover:text-primary-cyan transition-colors">
             <Settings size={20} />
           </button>
-          <button className="text-slate-400 hover:text-primary-cyan transition-colors">
-            <UserCircle size={20} />
-          </button>
+          {userProfile?.picture ? (
+            <button className="flex items-center gap-2 group overflow-hidden" onClick={clearSession}>
+              <img src={userProfile.picture} alt="User" className="w-6 h-6 rounded-full group-hover:opacity-80 transition-opacity" referrerPolicy="no-referrer" />
+              <div className="hidden group-hover:block ml-1 font-mono text-[10px] text-red-500 hover:text-red-400 my-auto cursor-pointer">LOGOUT</div>
+            </button>
+          ) : (
+            <button className="text-slate-400 hover:text-primary-cyan transition-colors" onClick={clearSession}>
+              <UserCircle size={20} />
+            </button>
+          )}
         </div>
       </header>
 
       {/* Side Navigation */}
       <aside className="fixed left-0 top-0 h-full flex flex-col pt-24 pb-8 w-64 border-r border-white/5 bg-surface z-30 hidden xl:flex">
-        <div className="px-6 mb-12">
-          <h2 className="font-clash text-xl font-bold text-white uppercase tracking-tight">OPERATOR_01</h2>
-          <p className="font-mono text-[10px] text-primary-cyan/60 tracking-widest mt-1">V-LEVEL ACCESS</p>
+        <div className="px-6 mb-12 flex items-center gap-3">
+          {userProfile?.picture && <img src={userProfile.picture} className="w-10 h-10 rounded shadow-[0_0_10px_rgba(0,255,240,0.2)] border border-primary-cyan/20" alt="avatar" referrerPolicy="no-referrer" />}
+          <div>
+            <h2 className="font-clash text-lg font-bold text-white uppercase tracking-tight">{userProfile?.given_name || 'OPERATOR_01'}</h2>
+            <p className="font-mono text-[10px] text-primary-cyan/60 tracking-widest mt-1">V-LEVEL ACCESS</p>
+          </div>
         </div>
         <nav className="flex-1 space-y-1 px-4">
           <button onClick={() => setView('COMMAND')} className={`w-full flex items-center gap-4 px-4 py-3 transition-all duration-300 font-mono text-xs uppercase ${currentView === 'COMMAND' ? 'bg-surface-low text-primary-cyan border-l-4 border-primary-cyan' : 'text-slate-500 hover:bg-surface-low hover:text-slate-200 border-l-4 border-transparent'}`}>

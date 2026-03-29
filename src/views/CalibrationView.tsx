@@ -8,12 +8,53 @@ interface Props {
   key?: React.Key;
 }
 
+const audioBufferToWav = (buffer: AudioBuffer): Blob => {
+  const numOfChan = buffer.numberOfChannels;
+  const length = buffer.length * numOfChan * 2 + 44;
+  const bufferArr = new ArrayBuffer(length);
+  const view = new DataView(bufferArr);
+  const channels = [];
+  const sampleRate = buffer.sampleRate;
+  let offset = 0, pos = 0;
+
+  const setUint16 = (data: number) => { view.setUint16(offset, data, true); offset += 2; };
+  const setUint32 = (data: number) => { view.setUint32(offset, data, true); offset += 4; };
+
+  setUint32(0x46464952); // "RIFF"
+  setUint32(length - 8); // file length - 8
+  setUint32(0x45564157); // "WAVE"
+  setUint32(0x20746d66); // "fmt " chunk
+  setUint32(16); // length = 16
+  setUint16(1); // PCM (uncompressed)
+  setUint16(numOfChan);
+  setUint32(sampleRate);
+  setUint32(sampleRate * 2 * numOfChan); // avg. bytes/sec
+  setUint16(numOfChan * 2); // block-align
+  setUint16(16); // 16-bit
+
+  setUint32(0x61746164); // "data" - chunk
+  setUint32(length - pos - 4); // chunk length
+
+  for (let i = 0; i < buffer.numberOfChannels; i++) channels.push(buffer.getChannelData(i));
+
+  while (pos < buffer.length) {
+    for (let i = 0; i < numOfChan; i++) {
+      let sample = Math.max(-1, Math.min(1, channels[i][pos])); // clamp
+      sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0; // scale to 16-bit signed int
+      view.setInt16(offset, sample, true); // write 16-bit sample
+      offset += 2;
+    }
+    pos++;
+  }
+  return new Blob([bufferArr], { type: "audio/wav" });
+};
+
 export function CalibrationView({ onNext, setVoiceId }: Props) {
   const [isRecording, setIsRecording] = useState(false);
   const [isCloning, setIsCloning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  
+
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<BlobPart[]>([]);
 
@@ -30,8 +71,18 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
       };
 
       mediaRecorder.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
-        await handleVoiceCloning(audioBlob);
+        try {
+          const webmBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+          const audioContext = new AudioContext();
+          const arrayBuffer = await webmBlob.arrayBuffer();
+          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+          const wavBlob = audioBufferToWav(audioBuffer);
+
+          await handleVoiceCloning(wavBlob);
+        } catch (e) {
+          console.error("WAV Encoding Error:", e);
+          setError("Failed to encode audio into WAV format for cloning.");
+        }
       };
 
       mediaRecorder.current.start();
@@ -54,7 +105,7 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
   const handleVoiceCloning = async (audioBlob: Blob) => {
     setIsCloning(true);
     setProgress(10);
-    
+
     // Simulate progress while uploading
     const interval = setInterval(() => {
       setProgress(p => Math.min(p + 15, 90));
@@ -75,7 +126,7 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
 
       const formData = new FormData();
       formData.append('name', `BabelRoom_User_${Math.floor(Math.random() * 1000)}`);
-      formData.append('files', audioBlob, 'calibration.webm');
+      formData.append('files', audioBlob, 'calibration.wav');
       formData.append('description', 'BabelRoom instant clone');
 
       const response = await fetch(`${workerUrl}/api/clone-voice`, {
@@ -91,7 +142,8 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
         setVoiceId(data.voice_id);
         setTimeout(onNext, 1000);
       } else {
-        throw new Error(data.error || "Failed to clone voice");
+        const errorMsg = data.detail?.message || data.error?.message || JSON.stringify(data);
+        throw new Error(errorMsg);
       }
     } catch (err: any) {
       clearInterval(interval);
@@ -102,7 +154,7 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -110,9 +162,9 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
     >
       <div className="fixed inset-0 pointer-events-none opacity-20 overflow-hidden z-0">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] opacity-30">
-          <img 
-            className="w-full h-full object-cover mix-blend-screen" 
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7NQR7rPnhZeCa7_PdtKcSwSpOzA_4ME3WIGb-AeBp6V3BpRNweXqaUTTIBmaQO_C5KKabo4gmvOC_rR1yktSd7cLXHlsnzBaaIRt1mllRlPbFWqRP1BCjTTFvntIWRQFuhnmIakoTVRloe2O4SN0kIrJwEucbVsSLQ4-NhoSBkVaiJ3NOlovQmSAls7HKy4Enu_MbTCy993zRzV2GOEejHnjtDtCZhcvNG-8cEMQ7MPg7eerot0UmMCg8bzjyMqnVB1ZDeS4myII" 
+          <img
+            className="w-full h-full object-cover mix-blend-screen"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7NQR7rPnhZeCa7_PdtKcSwSpOzA_4ME3WIGb-AeBp6V3BpRNweXqaUTTIBmaQO_C5KKabo4gmvOC_rR1yktSd7cLXHlsnzBaaIRt1mllRlPbFWqRP1BCjTTFvntIWRQFuhnmIakoTVRloe2O4SN0kIrJwEucbVsSLQ4-NhoSBkVaiJ3NOlovQmSAls7HKy4Enu_MbTCy993zRzV2GOEejHnjtDtCZhcvNG-8cEMQ7MPg7eerot0UmMCg8bzjyMqnVB1ZDeS4myII"
             alt="Nebula"
             referrerPolicy="no-referrer"
           />
@@ -139,7 +191,7 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
 
           {/* Liquid Visualizer Cell */}
           <div className="relative h-64 w-full bg-[#0e0e0e] flex items-center justify-center mb-16 rounded-lg overflow-hidden border border-white/5">
-            {isRecording ? (
+            {!isRecording && !isCloning ? (
               <svg className="w-full h-full opacity-80" viewBox="0 0 800 200">
                 <path className="liquid-wave" d="M 0 100 Q 100 20 200 100 T 400 100 T 600 100 T 800 100" fill="none" stroke="#00FFF0" strokeWidth="2"></path>
                 <path className="liquid-wave" d="M 0 100 Q 100 180 200 100 T 400 100 T 600 100 T 800 100" fill="none" stroke="#7701D0" strokeWidth="1.5" style={{ animationDelay: '-1s' }}></path>
@@ -147,7 +199,7 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
               </svg>
             ) : (
               <div className="text-center p-8">
-                <p className="font-mono text-sm text-slate-400 mb-4">Please read the following sentence clearly:</p>
+                <p className="font-mono text-sm text-slate-400 mb-4">{isCloning ? "Processing neural signature..." : "Please read the following sentence clearly:"}</p>
                 <p className="font-space text-2xl text-white italic">"The quick brown fox jumps over the lazy dog, establishing a stable neural link across the global network."</p>
               </div>
             )}
@@ -171,7 +223,7 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
               <span className="text-white/40">EST_COMPLETE: 00:42S</span>
             </div>
             <div className="h-2 w-full bg-surface-high relative overflow-hidden">
-              <motion.div 
+              <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
@@ -199,16 +251,15 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
 
           {/* Action Footer */}
           <div className="mt-12 flex justify-center gap-6">
-            <button 
+            <button
               onMouseDown={startRecording}
               onMouseUp={stopRecording}
               onMouseLeave={stopRecording}
               onTouchStart={startRecording}
               onTouchEnd={stopRecording}
               disabled={isCloning}
-              className={`px-10 py-4 flex items-center gap-4 font-space font-bold uppercase tracking-tighter transition-all transform active:scale-95 ${
-                isRecording ? 'bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.5)]' : 'bg-white text-black hover:bg-primary-cyan hover:text-[#003733]'
-              } ${isCloning ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`px-10 py-4 flex items-center gap-4 font-space font-bold uppercase tracking-tighter transition-all transform active:scale-95 ${isRecording ? 'bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.5)]' : 'bg-white text-black hover:bg-primary-cyan hover:text-[#003733]'
+                } ${isCloning ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <Mic size={20} className={isRecording ? 'animate-pulse' : ''} />
               {isRecording ? 'RELEASE TO CLONE' : isCloning ? 'CLONING...' : 'HOLD TO RECORD'}
@@ -230,9 +281,9 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
           <p className="font-inter text-xs text-slate-400 leading-relaxed">Matching source timbre to target linguistic framework. Calibration stability verified by operator.</p>
         </div>
         <div className="md:col-span-2 relative h-32 rounded-lg overflow-hidden border border-white/5">
-          <img 
-            className="w-full h-full object-cover grayscale opacity-30" 
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiXOSyNMHzfvEzeUq9-byxASns9kT1tICPkNS2XcIvR_xtjuHoslGdrt0tHJE_4UH0_HmZWckLEZ_Rk4s32cdg4af47t04X5dqs3f3-sg2t5jlJRouq3QhYilt_VweP_NCD3fr_YkQO9OjgonDK0mYarmB5AGcMvlVF-QVgS0F4j3qmTzrQt7nxwUDAjIKroABrkLW5_cfxisv1ieskgy5yGf_IZ-XMLVH6u1HOqEZN8n4ygrqg58L8Wf63Tq0P22otrFQnCUmGo4" 
+          <img
+            className="w-full h-full object-cover grayscale opacity-30"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiXOSyNMHzfvEzeUq9-byxASns9kT1tICPkNS2XcIvR_xtjuHoslGdrt0tHJE_4UH0_HmZWckLEZ_Rk4s32cdg4af47t04X5dqs3f3-sg2t5jlJRouq3QhYilt_VweP_NCD3fr_YkQO9OjgonDK0mYarmB5AGcMvlVF-QVgS0F4j3qmTzrQt7nxwUDAjIKroABrkLW5_cfxisv1ieskgy5yGf_IZ-XMLVH6u1HOqEZN8n4ygrqg58L8Wf63Tq0P22otrFQnCUmGo4"
             alt="Hardware"
             referrerPolicy="no-referrer"
           />
