@@ -171,19 +171,19 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
         </div>
       </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto flex items-center justify-center min-h-[700px]">
-        <div className="w-full bg-white/5 backdrop-blur-2xl border border-white/10 p-12 relative overflow-hidden shadow-[0_0_100px_rgba(0,255,240,0.05)] rounded-xl">
+      <div className="relative z-10 max-w-4xl mx-auto flex items-center justify-center min-h-0 md:min-h-[700px] mt-12 md:mt-0">
+        <div className="w-full bg-white/5 backdrop-blur-2xl border border-white/10 p-6 md:p-12 relative overflow-hidden shadow-[0_0_100px_rgba(0,255,240,0.05)] rounded-xl">
           {/* Corner Accents */}
           <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-primary-cyan opacity-50"></div>
           <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-primary-cyan opacity-50"></div>
 
           {/* Header Info */}
-          <div className="flex justify-between items-start mb-16">
+          <div className="flex flex-col md:flex-row justify-between items-start mb-8 md:mb-16 gap-4">
             <div>
-              <h2 className="font-clash text-5xl font-black uppercase tracking-tighter text-white mb-2">CALIBRATION_ACTIVE</h2>
-              <p className="font-mono text-xs tracking-widest text-primary-cyan/60 uppercase">System: Neural_Link_v4.2 // Extraction Mode: Deep_Clone</p>
+              <h2 className="font-clash text-3xl md:text-5xl font-black uppercase tracking-tighter text-white mb-2">CALIBRATION_ACTIVE</h2>
+              <p className="font-mono text-[10px] md:text-xs tracking-widest text-primary-cyan/60 uppercase">System: Neural_Link // Extraction Mode: Deep_Clone</p>
             </div>
-            <div className="text-right">
+            <div className="text-left md:text-right">
               <div className="font-mono text-xl text-white">[ ACTIVE ]</div>
               <div className="font-mono text-[10px] text-slate-500">PING: 14MS</div>
             </div>
@@ -198,9 +198,9 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
                 <path className="liquid-wave" d="M 0 100 Q 100 50 200 100 T 400 100 T 600 100 T 800 100" fill="none" stroke="#FFFFFF" strokeWidth="0.5" style={{ animationDelay: '-2s', opacity: 0.3 }}></path>
               </svg>
             ) : (
-              <div className="text-center p-8">
-                <p className="font-mono text-sm text-slate-400 mb-4">{isCloning ? "Processing neural signature..." : "Please read the following sentence clearly:"}</p>
-                <p className="font-space text-2xl text-white italic">"The quick brown fox jumps over the lazy dog, establishing a stable neural link across the global network."</p>
+              <div className="text-center p-4 md:p-8">
+                <p className="font-mono text-xs md:text-sm text-slate-400 mb-2 md:mb-4">{isCloning ? "Processing neural signature..." : "Please read the following sentence clearly:"}</p>
+                <p className="font-space text-lg md:text-2xl text-white italic">"The quick brown fox jumps over the lazy dog, establishing a stable neural link across the global network."</p>
               </div>
             )}
             <div className="absolute inset-0 flex justify-around items-center px-12 pointer-events-none">
@@ -233,7 +233,7 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
             {error && <p className="font-mono text-xs text-red-400 mt-2">ERROR: {error}</p>}
 
             {/* Bento Detail Grid */}
-            <div className="grid grid-cols-3 gap-4 mt-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
               <div className="bg-surface-low p-4 border-l-2 border-primary-cyan/30">
                 <div className="text-[10px] font-mono text-slate-500 uppercase mb-1">Frequency Mapping</div>
                 <div className="text-lg font-space text-white">44.1 KHZ</div>
@@ -262,7 +262,7 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
                 } ${isCloning ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <Mic size={20} className={isRecording ? 'animate-pulse' : ''} />
-              {isRecording ? 'RELEASE TO CLONE' : isCloning ? 'CLONING...' : 'HOLD TO RECORD'}
+              <span className="text-sm md:text-base">{isRecording ? 'RELEASE TO CLONE' : isCloning ? 'CLONING...' : 'HOLD TO RECORD'}</span>
             </button>
           </div>
         </div>

@@ -29,7 +29,8 @@ export default function App() {
   });
 
   const [targetLang, setTargetLang] = useState<string>('en');
-  const [roomId, setRoomId] = useState<string>('room-alpha');
+  const [roomId, setRoomId] = useState<string>('');
+  const [callLogs, setCallLogs] = useState<any[]>([]);
 
   const handleLoginSuccess = (profile: any) => {
     localStorage.setItem('babelroom_user', JSON.stringify(profile));
@@ -65,9 +66,9 @@ export default function App() {
       case 'COMMAND':
         return <CommandView key="cmd" onNext={() => setCurrentView('LIVE_LINK')} setTargetLang={setTargetLang} setRoomId={setRoomId} targetLang={targetLang} roomId={roomId} userProfile={userProfile} />;
       case 'LIVE_LINK':
-        return <LiveLinkView key="live" onNext={() => setCurrentView('LOG_SUMMARY')} voiceId={voiceId} targetLang={targetLang} roomId={roomId} userProfile={userProfile} />;
+        return <LiveLinkView key="live" onNext={() => setCurrentView('LOG_SUMMARY')} voiceId={voiceId} targetLang={targetLang} roomId={roomId} userProfile={userProfile} setCallLogs={setCallLogs} />;
       case 'LOG_SUMMARY':
-        return <LogSummaryView key="log" onNext={() => setCurrentView('INITIALIZE')} />;
+        return <LogSummaryView key="log" onNext={() => { setCallLogs([]); setCurrentView('COMMAND'); }} logs={callLogs} roomId={roomId} />;
       default:
         return <LoginView key="login" onLoginSuccess={handleLoginSuccess} />;
     }

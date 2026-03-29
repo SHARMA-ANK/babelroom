@@ -4,26 +4,28 @@ import { Activity } from 'lucide-react';
 
 interface Props {
   onNext: () => void;
+  logs: any[];
+  roomId: string;
   key?: React.Key;
 }
 
-export function LogSummaryView({ onNext }: Props) {
+export function LogSummaryView({ onNext, logs, roomId }: Props) {
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0 }}
       className="pt-28 px-6 pb-12 max-w-7xl mx-auto min-h-screen relative"
     >
       <header className="mb-12">
-        <div className="font-mono text-primary-cyan text-sm tracking-[0.3em] mb-4 uppercase">TRANSMISSION_COMPLETE // 0X-4491</div>
+        <div className="font-mono text-primary-cyan text-sm tracking-[0.3em] mb-4 uppercase">TRANSMISSION_COMPLETE // {roomId}</div>
         <h1 className="font-clash text-6xl md:text-8xl font-black uppercase tracking-tighter leading-none mb-4">LOG_SUMMARY</h1>
         <div className="flex items-center gap-4 font-mono text-slate-400 text-sm">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary-cyan"></span> SESSION_STABLE</span>
           <span className="opacity-30">|</span>
-          <span>DURATION: 44:12:09</span>
+          <span>ENTRIES: {logs.length}</span>
           <span className="opacity-30">|</span>
-          <span>NODES: 14_ACTIVE</span>
+          <span>ENCRYPTION: AES-256</span>
         </div>
       </header>
 
@@ -37,7 +39,7 @@ export function LogSummaryView({ onNext }: Props) {
             </div>
             <Activity className="text-primary-cyan" />
           </div>
-          
+
           <div className="h-48 flex items-end gap-1 mb-6">
             <motion.div initial={{ height: 0 }} animate={{ height: '50%' }} className="flex-1 bg-primary-cyan/20"></motion.div>
             <motion.div initial={{ height: 0 }} animate={{ height: '66%' }} className="flex-1 bg-primary-cyan/40"></motion.div>
@@ -53,7 +55,7 @@ export function LogSummaryView({ onNext }: Props) {
             <motion.div initial={{ height: 0 }} animate={{ height: '100%' }} className="flex-1 bg-primary-cyan/60"></motion.div>
             <motion.div initial={{ height: 0 }} animate={{ height: '50%' }} className="flex-1 bg-primary-cyan/30"></motion.div>
           </div>
-          
+
           <div className="grid grid-cols-3 gap-6 font-mono">
             <div className="p-4 bg-surface-high">
               <div className="text-[10px] text-slate-400 uppercase mb-1">Avg Jitter</div>
@@ -102,7 +104,7 @@ export function LogSummaryView({ onNext }: Props) {
               </div>
             </div>
           </div>
-          
+
           <div className="mt-10 pt-10 border-t border-white/5">
             <div className="bg-[#1f1f1f] p-4 flex items-center gap-4">
               <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHMLQJQmLX4IhTZrGp_UYZBFheYOzyiymtQ6ig8WHFRfFQzU9PxXSGBB679KTH0kbX4gzJrulxvIh6guYGJfALmpok4AmFTKUrrXyycUaahOCJkBj0pIUXZQB-YL130xA3lObE_nlw7v31DVTBGWdNktAKatndC-3g1pOmvNd3m6Tnu3ISn-EmhBmuDjWsEQOMeFuVamw2ZQB4wlWYndYedq14VQvJm282vleeiQSBGzXJ8winPg3TjxsRJzZMJApVwzrG8rjlkYY" alt="Audio Spectrogram" className="w-12 h-12 object-cover rounded-sm grayscale hover:grayscale-0 transition-all" referrerPolicy="no-referrer" />
@@ -125,39 +127,17 @@ export function LogSummaryView({ onNext }: Props) {
             </div>
           </div>
           <div className="font-mono text-xs p-6 space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">
-            <div className="flex gap-8 group">
-              <span className="text-slate-400 shrink-0 w-32">[14:22:01.09]</span>
-              <span className="text-primary-cyan shrink-0 w-24">SOURCE_JP</span>
-              <span className="text-white">システムの整合性を確認しました。</span>
-              <span className="text-slate-400 italic opacity-0 group-hover:opacity-100 transition-opacity">--- System integrity confirmed.</span>
-            </div>
-            <div className="flex gap-8 group">
-              <span className="text-slate-400 shrink-0 w-32">[14:22:04.55]</span>
-              <span className="text-primary-cyan shrink-0 w-24">TARGET_EN</span>
-              <span className="text-white">ALL NEURAL PATHWAYS ALIGNED FOR UPLINK.</span>
-            </div>
-            <div className="flex gap-8 group">
-              <span className="text-slate-400 shrink-0 w-32">[14:22:12.18]</span>
-              <span className="text-primary-cyan shrink-0 w-24">SOURCE_JP</span>
-              <span className="text-white">プロトコル4を開始します。</span>
-              <span className="text-slate-400 italic opacity-0 group-hover:opacity-100 transition-opacity">--- Initiating Protocol 4.</span>
-            </div>
-            <div className="flex gap-8 group">
-              <span className="text-slate-400 shrink-0 w-32">[14:23:01.44]</span>
-              <span className="text-primary-purple shrink-0 w-24">SYST_LOG</span>
-              <span className="text-primary-purple opacity-80">ENCRYPTION LAYER APPLIED: AES-256 QUANTUM-RESISTANT</span>
-            </div>
-            <div className="flex gap-8 group">
-              <span className="text-slate-400 shrink-0 w-32">[14:24:55.01]</span>
-              <span className="text-primary-cyan shrink-0 w-24">SOURCE_JP</span>
-              <span className="text-white">データの転送は成功しました。</span>
-              <span className="text-slate-400 italic opacity-0 group-hover:opacity-100 transition-opacity">--- Data transfer successful.</span>
-            </div>
-            <div className="flex gap-8 group">
-              <span className="text-slate-400 shrink-0 w-32">[14:25:00.00]</span>
-              <span className="text-[#00716a] shrink-0 w-24">UPLINK_OFF</span>
-              <span className="text-[#00716a]">SESSION_TERMINATED_BY_OPERATOR</span>
-            </div>
+            {logs.length === 0 ? (
+              <div className="text-slate-500 italic">No communication data captured during this session.</div>
+            ) : (
+              logs.map((log, index) => (
+                <div key={index} className="flex gap-4 md:gap-8 group">
+                  <span className="text-slate-400 shrink-0 w-24 md:w-32">{log.time}</span>
+                  <span className={`${log.color} shrink-0 w-20 md:w-24`}>{log.source}</span>
+                  <span className={log.color === 'text-[#00716a]' || log.color === 'text-primary-purple' ? log.color : "text-white"}>{log.text}</span>
+                </div>
+              ))
+            )}
           </div>
         </section>
       </div>

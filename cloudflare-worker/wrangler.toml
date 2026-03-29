@@ -11,7 +11,7 @@ class_name = "BabelRoom"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["BabelRoom"]
+new_sqlite_classes = ["BabelRoom"]
 
 [vars]
 # ELEVENLABS_API_KEY = "your-api-key-here" # Set this via `wrangler secret put ELEVENLABS_API_KEY`

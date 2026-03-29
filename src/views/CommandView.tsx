@@ -13,10 +13,17 @@ interface Props {
 }
 
 export function CommandView({ onNext, setTargetLang, setRoomId, targetLang, roomId, userProfile }: Props) {
-  const [inputRoomId, setInputRoomId] = useState(roomId);
+  const [inputRoomId, setInputRoomId] = useState(roomId || '');
 
   const handleJoin = () => {
-    setRoomId(inputRoomId);
+    if (!inputRoomId.trim()) return;
+    setRoomId(inputRoomId.trim().toUpperCase());
+    onNext();
+  };
+
+  const handleInstant = () => {
+    const newId = Math.random().toString(36).substring(2, 6).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+    setRoomId(newId);
     onNext();
   };
 
@@ -28,16 +35,17 @@ export function CommandView({ onNext, setTargetLang, setRoomId, targetLang, room
       className="pt-32 pb-12 px-6 max-w-[1600px] mx-auto mesh-gradient min-h-screen"
     >
       <div className="mb-12">
-        <h1 className="font-clash text-7xl md:text-9xl font-black uppercase tracking-tighter text-white opacity-90">COMMAND</h1>
+        <h1 className="font-clash text-5xl md:text-8xl lg:text-9xl font-black uppercase tracking-tighter text-white opacity-90">COMMAND</h1>
         <div className="flex items-center gap-4 mt-2">
           <span className="w-12 h-[2px] bg-primary-cyan"></span>
           <span className="font-mono text-primary-cyan text-sm tracking-[0.5em]">SYSTEM_READY // 0xAF229</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[240px]">
-        {/* Hero Stream Card */}
-        <div className="md:col-span-8 md:row-span-2 relative group overflow-hidden rounded-xl">
+      <div className="flex flex-col lg:flex-row gap-6">
+
+        {/* Left Column - Hero Stream Card */}
+        <div className="flex-[2] relative group overflow-hidden rounded-xl bg-surface-low border border-white/5">
           <div className="bg-surface-low h-full w-full p-8 flex flex-col justify-between relative z-10">
             <div className="flex justify-between items-start">
               <div>
@@ -64,19 +72,11 @@ export function CommandView({ onNext, setTargetLang, setRoomId, targetLang, room
               </div>
             </div>
 
-            <div className="flex flex-col md:flex-row justify-between items-end md:items-center mt-6 gap-4">
-              <div className="flex flex-col gap-2 w-full md:w-auto">
-                <label className="font-mono text-[10px] text-slate-500 uppercase">Room ID</label>
-                <input
-                  type="text"
-                  value={inputRoomId}
-                  onChange={(e) => setInputRoomId(e.target.value)}
-                  className="bg-surface-high border border-white/10 text-white font-mono text-sm px-4 py-2 w-full md:w-64 focus:outline-none focus:border-primary-cyan transition-colors"
-                  placeholder="Enter Room ID"
-                />
-              </div>
-              <div className="flex flex-col gap-2 w-full md:w-auto">
-                <label className="font-mono text-[10px] text-slate-500 uppercase">Target Language</label>
+            <div className="flex flex-col gap-6 mt-6 md:mt-8">
+
+              {/* Global Settings */}
+              <div className="flex flex-col gap-2 w-full">
+                <label className="font-mono text-[10px] text-slate-500 uppercase tracking-widest">Select Your Target Reception Language</label>
                 <select
                   value={targetLang}
                   onChange={(e) => setTargetLang(e.target.value)}
@@ -94,50 +94,87 @@ export function CommandView({ onNext, setTargetLang, setRoomId, targetLang, room
                   <option value="zh">CHINESE (CN)</option>
                 </select>
               </div>
-              <button onClick={handleJoin} className="bg-white text-black px-8 py-3 font-mono text-xs font-black hover:bg-primary-cyan transition-colors w-full md:w-auto mt-4 md:mt-0">
-                JOIN_CHANNEL
-              </button>
+
+              {/* Action Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                {/* Instant Link Action */}
+                <div className="bg-white/5 border border-white/10 p-4 md:p-6 flex flex-col justify-between group hover:border-primary-cyan/50 transition-colors">
+                  <div>
+                    <h4 className="font-space text-xl md:text-2xl font-bold text-white mb-2 uppercase">Instant Link</h4>
+                    <p className="font-inter text-xs text-white/50 mb-6 font-light">Generate a secure cryptographic channel and instantly enter the room.</p>
+                  </div>
+                  <button onClick={handleInstant} className="bg-primary-cyan text-[#003733] px-6 py-4 font-mono text-xs font-black hover:bg-white transition-colors w-full uppercase tracking-widest">
+                    START NEW CALL
+                  </button>
+                </div>
+
+                {/* Secure Join Action */}
+                <div className="bg-white/5 border border-white/10 p-4 md:p-6 flex flex-col justify-between group hover:border-primary-purple/50 transition-colors">
+                  <div>
+                    <h4 className="font-space text-xl md:text-2xl font-bold text-white mb-2 uppercase">Secure Join</h4>
+                    <p className="font-inter text-xs text-white/50 mb-6 font-light">Enter an existing channel ID to intercept the transmission.</p>
+                  </div>
+                  <div className="flex bg-black/50 border border-white/10 focus-within:border-primary-purple transition-colors">
+                    <input
+                      type="text"
+                      value={inputRoomId}
+                      onChange={(e) => setInputRoomId(e.target.value)}
+                      className="bg-transparent text-white font-mono text-sm px-4 py-4 w-full focus:outline-none uppercase tracking-wider"
+                      placeholder="ENTER ID (e.g. AB12-XY89)"
+                    />
+                    <button onClick={handleJoin} className="bg-white text-black px-6 font-mono text-xs font-black hover:bg-primary-purple hover:text-white transition-colors">
+                      JOIN
+                    </button>
+                  </div>
+                </div>
+
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Latency Card */}
-        <div className="md:col-span-4 md:row-span-1 bg-surface-low rounded-xl p-6 border border-white/5 hover:border-primary-cyan/30 transition-all">
-          <div className="flex justify-between items-center mb-6">
-            <Share2 className="text-primary-purple" size={20} />
-            <span className="font-mono text-[10px] text-slate-500 uppercase">Latency</span>
+        {/* Right Column - Stats */}
+        <div className="flex-[1] flex flex-col gap-6">
+
+          {/* Latency Card */}
+          <div className="bg-surface-low rounded-xl p-6 border border-white/5 hover:border-primary-cyan/30 transition-all flex-1 flex flex-col justify-center">
+            <div className="flex justify-between items-center mb-6">
+              <Share2 className="text-primary-purple" size={20} />
+              <span className="font-mono text-[10px] text-slate-500 uppercase">Latency</span>
+            </div>
+            <div className="font-clash text-5xl font-bold text-white mb-2">12<span className="text-sm font-mono text-primary-cyan ml-2">MS</span></div>
+            <div className="w-full bg-white/5 h-1">
+              <div className="bg-primary-purple h-full w-[85%]"></div>
+            </div>
+            <p className="font-mono text-[10px] text-slate-500 mt-4">STABLE ACROSS 14 NODES</p>
           </div>
-          <div className="font-clash text-5xl font-bold text-white mb-2">12<span className="text-sm font-mono text-primary-cyan ml-2">MS</span></div>
-          <div className="w-full bg-white/5 h-1">
-            <div className="bg-primary-purple h-full w-[85%]"></div>
+
+          {/* Language Distribution Card */}
+          <div className="bg-surface-low rounded-xl p-6 border border-white/5 hover:border-primary-cyan/30 transition-all flex-1 flex flex-col justify-center">
+            <div className="flex justify-between items-center mb-4">
+              <Languages className="text-primary-cyan" size={20} />
+              <span className="font-mono text-[10px] text-slate-500 uppercase">Active Bridges</span>
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center font-mono text-xs">
+                <span className="text-white">EN_US <span className="text-slate-500">→</span> JP_TYO</span>
+                <span className="text-primary-cyan">42%</span>
+              </div>
+              <div className="flex justify-between items-center font-mono text-xs">
+                <span className="text-white">ZH_CN <span className="text-slate-500">→</span> DE_BER</span>
+                <span className="text-primary-cyan">28%</span>
+              </div>
+              <div className="flex justify-between items-center font-mono text-xs">
+                <span className="text-white">ES_MAD <span className="text-slate-500">→</span> FR_PAR</span>
+                <span className="text-primary-cyan">15%</span>
+              </div>
+            </div>
           </div>
-          <p className="font-mono text-[10px] text-slate-500 mt-4">STABLE ACROSS 14 NODES</p>
         </div>
 
-        {/* Language Distribution Card */}
-        <div className="md:col-span-4 md:row-span-1 bg-surface-low rounded-xl p-6 border border-white/5 hover:border-primary-cyan/30 transition-all">
-          <div className="flex justify-between items-center mb-4">
-            <Languages className="text-primary-cyan" size={20} />
-            <span className="font-mono text-[10px] text-slate-500 uppercase">Active Bridges</span>
-          </div>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center font-mono text-xs">
-              <span className="text-white">EN_US <span className="text-slate-500">→</span> JP_TYO</span>
-              <span className="text-primary-cyan">42%</span>
-            </div>
-            <div className="flex justify-between items-center font-mono text-xs">
-              <span className="text-white">ZH_CN <span className="text-slate-500">→</span> DE_BER</span>
-              <span className="text-primary-cyan">28%</span>
-            </div>
-            <div className="flex justify-between items-center font-mono text-xs">
-              <span className="text-white">ES_MAD <span className="text-slate-500">→</span> FR_PAR</span>
-              <span className="text-primary-cyan">15%</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Nodes */}
-        <div className="md:col-span-12 md:row-span-2 mt-8">
+        {/* Recent Nodes (Full Width Area Below) */}
+        <div className="mt-8">
           <div className="flex justify-between items-end mb-8">
             <h2 className="font-clash text-4xl font-bold uppercase text-white">Recent_Nodes</h2>
             <span className="font-mono text-xs text-slate-500">SCANNING_HISTORY...</span>
