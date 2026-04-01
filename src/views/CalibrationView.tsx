@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Mic } from 'lucide-react';
+import { Joyride, STATUS, Step } from 'react-joyride';
 
 interface Props {
   onNext: () => void;
@@ -54,6 +55,59 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
   const [isCloning, setIsCloning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+
+  const [runTour, setRunTour] = useState(false);
+
+  useEffect(() => {
+    if (!localStorage.getItem('babelroom_tour_calib')) {
+      localStorage.setItem('babelroom_tour_calib', 'true');
+      setTimeout(() => setRunTour(true), 100);
+    }
+  }, []);
+
+  const handleJoyrideCallback = (data: any) => {
+    const { status } = data;
+    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status as any)) {
+      localStorage.setItem('babelroom_tour_calib', 'true');
+      setRunTour(false);
+    }
+  };
+
+  const steps: any[] = [
+    {
+      target: '.tour-record-btn',
+      content: 'Press and HOLD this core to record an audio sample. We need about 5-10 seconds of clear speech to synthesize your neural voice clone.',
+      disableBeacon: true,
+    }
+  ];
+
+  const tourStyles = {
+    options: {
+      backgroundColor: '#1E1E1E',
+      arrowColor: '#1E1E1E',
+      textColor: '#FFFFFF',
+      overlayColor: 'rgba(0, 0, 0, 0.85)',
+      primaryColor: '#00FFF0',
+      zIndex: 10000,
+    },
+    tooltip: {
+      borderRadius: '0',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      fontFamily: 'Inter, sans-serif',
+    },
+    buttonNext: {
+      backgroundColor: '#00FFF0',
+      color: '#003733',
+      borderRadius: '0',
+      fontFamily: '"Space Grotesk", sans-serif',
+      fontWeight: 'bold',
+      textTransform: 'uppercase' as any,
+    },
+    buttonBack: {
+      color: '#94a3b8',
+      fontFamily: '"Space Grotesk", sans-serif',
+    },
+  };
 
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<BlobPart[]>([]);
@@ -160,6 +214,14 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
       exit={{ opacity: 0 }}
       className="pt-32 pb-12 px-6 mesh-gradient min-h-screen"
     >
+      {/* @ts-ignore - React Joyride prop typings mismatch */}
+      <Joyride
+        steps={steps}
+        run={runTour}
+        continuous={true}
+        styles={tourStyles}
+        callback={handleJoyrideCallback}
+      />
       <div className="fixed inset-0 pointer-events-none opacity-20 overflow-hidden z-0">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] opacity-30">
           <img
@@ -258,7 +320,7 @@ export function CalibrationView({ onNext, setVoiceId }: Props) {
               onTouchStart={startRecording}
               onTouchEnd={stopRecording}
               disabled={isCloning}
-              className={`px-10 py-4 flex items-center gap-4 font-space font-bold uppercase tracking-tighter transition-all transform active:scale-95 ${isRecording ? 'bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.5)]' : 'bg-white text-black hover:bg-primary-cyan hover:text-[#003733]'
+              className={`tour-record-btn px-10 py-4 flex items-center gap-4 font-space font-bold uppercase tracking-tighter transition-all transform active:scale-95 ${isRecording ? 'bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.5)]' : 'bg-white text-black hover:bg-primary-cyan hover:text-[#003733]'
                 } ${isCloning ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <Mic size={20} className={isRecording ? 'animate-pulse' : ''} />

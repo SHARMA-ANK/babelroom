@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Share2, Languages, ChevronRight } from 'lucide-react';
+import { Joyride, STATUS, Step } from 'react-joyride';
 
 interface Props {
   onNext: () => void;
@@ -27,6 +28,69 @@ export function CommandView({ onNext, setTargetLang, setRoomId, targetLang, room
     onNext();
   };
 
+  const [runTour, setRunTour] = useState(false);
+
+  useEffect(() => {
+    if (!localStorage.getItem('babelroom_tour_cmd')) {
+      localStorage.setItem('babelroom_tour_cmd', 'true');
+      setTimeout(() => setRunTour(true), 1000);
+    }
+  }, []);
+
+  const handleJoyrideCallback = (data: any) => {
+    const { status } = data;
+    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status as any)) {
+      localStorage.setItem('babelroom_tour_cmd', 'true');
+      setRunTour(false);
+    }
+  };
+
+  const steps: any[] = [
+    {
+      target: '.tour-target-lang',
+      content: 'First, select YOUR native language. The other person\'s voice will be captured and entirely translated into this language so you can understand them natively.',
+      disableBeacon: true,
+    },
+    {
+      target: '.tour-instant-link',
+      content: 'Click here to instantly launch a brand new call. You will be given a secure Room ID to share with your friend.',
+      disableBeacon: true,
+    },
+    {
+      target: '.tour-secure-join',
+      content: 'Or, if your friend already generated a Room ID, simply paste it here and click JOIN to connect directly to their neural bridge.',
+      disableBeacon: true,
+    }
+  ];
+
+  const tourStyles = {
+    options: {
+      backgroundColor: '#1E1E1E',
+      arrowColor: '#1E1E1E',
+      textColor: '#FFFFFF',
+      overlayColor: 'rgba(0, 0, 0, 0.85)',
+      primaryColor: '#00FFF0',
+      zIndex: 10000,
+    },
+    tooltip: {
+      borderRadius: '0',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      fontFamily: 'Inter, sans-serif',
+    },
+    buttonNext: {
+      backgroundColor: '#00FFF0',
+      color: '#003733',
+      borderRadius: '0',
+      fontFamily: '"Space Grotesk", sans-serif',
+      fontWeight: 'bold',
+      textTransform: 'uppercase' as any,
+    },
+    buttonBack: {
+      color: '#94a3b8',
+      fontFamily: '"Space Grotesk", sans-serif',
+    },
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -34,6 +98,14 @@ export function CommandView({ onNext, setTargetLang, setRoomId, targetLang, room
       exit={{ opacity: 0 }}
       className="pt-32 pb-12 px-6 max-w-[1600px] mx-auto mesh-gradient min-h-screen"
     >
+      {/* @ts-ignore - React Joyride prop typings mismatch */}
+      <Joyride
+        steps={steps}
+        run={runTour}
+        continuous={true}
+        styles={tourStyles}
+        callback={handleJoyrideCallback}
+      />
       <div className="mb-12">
         <h1 className="font-clash text-5xl md:text-8xl lg:text-9xl font-black uppercase tracking-tighter text-white opacity-90">COMMAND</h1>
         <div className="flex items-center gap-4 mt-2">
@@ -75,7 +147,7 @@ export function CommandView({ onNext, setTargetLang, setRoomId, targetLang, room
             <div className="flex flex-col gap-6 mt-6 md:mt-8">
 
               {/* Global Settings */}
-              <div className="flex flex-col gap-2 w-full">
+              <div className="tour-target-lang flex flex-col gap-2 w-full">
                 <label className="font-mono text-[10px] text-slate-500 uppercase tracking-widest">Select Your Target Reception Language</label>
                 <select
                   value={targetLang}
@@ -99,7 +171,7 @@ export function CommandView({ onNext, setTargetLang, setRoomId, targetLang, room
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                 {/* Instant Link Action */}
-                <div className="bg-white/5 border border-white/10 p-4 md:p-6 flex flex-col justify-between group hover:border-primary-cyan/50 transition-colors">
+                <div className="tour-instant-link bg-white/5 border border-white/10 p-4 md:p-6 flex flex-col justify-between group hover:border-primary-cyan/50 transition-colors">
                   <div>
                     <h4 className="font-space text-xl md:text-2xl font-bold text-white mb-2 uppercase">Instant Link</h4>
                     <p className="font-inter text-xs text-white/50 mb-6 font-light">Generate a secure cryptographic channel and instantly enter the room.</p>
@@ -110,7 +182,7 @@ export function CommandView({ onNext, setTargetLang, setRoomId, targetLang, room
                 </div>
 
                 {/* Secure Join Action */}
-                <div className="bg-white/5 border border-white/10 p-4 md:p-6 flex flex-col justify-between group hover:border-primary-purple/50 transition-colors">
+                <div className="tour-secure-join bg-white/5 border border-white/10 p-4 md:p-6 flex flex-col justify-between group hover:border-primary-purple/50 transition-colors">
                   <div>
                     <h4 className="font-space text-xl md:text-2xl font-bold text-white mb-2 uppercase">Secure Join</h4>
                     <p className="font-inter text-xs text-white/50 mb-6 font-light">Enter an existing channel ID to intercept the transmission.</p>

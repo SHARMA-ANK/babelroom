@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { MicOff, Mic, ArrowRightLeft, PhoneOff } from 'lucide-react';
+import { Joyride, STATUS, Step } from 'react-joyride';
 
 interface Props {
   onNext: () => void;
@@ -25,6 +26,64 @@ export function LiveLinkView({ onNext, voiceId, targetLang, roomId, userProfile,
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  const [runTour, setRunTour] = useState(false);
+
+  useEffect(() => {
+    if (!localStorage.getItem('babelroom_tour_live')) {
+      localStorage.setItem('babelroom_tour_live', 'true');
+      setTimeout(() => setRunTour(true), 1500); // Wait for connection sequence
+    }
+  }, []);
+
+  const handleJoyrideCallback = (data: any) => {
+    const { status } = data;
+    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status as any)) {
+      localStorage.setItem('babelroom_tour_live', 'true');
+      setRunTour(false);
+    }
+  };
+
+  const steps: any[] = [
+    {
+      target: '.tour-room-id',
+      content: 'Share this secure cryptographic Room ID with your partner so they can join your bridge.',
+      disableBeacon: true,
+    },
+    {
+      target: '.tour-ptt-btn',
+      content: 'Push & HOLD this button to speak. Release it to encrypt and transmit your voice to the remote node.',
+      disableBeacon: true,
+    }
+  ];
+
+  const tourStyles = {
+    options: {
+      backgroundColor: '#1E1E1E',
+      arrowColor: '#1E1E1E',
+      textColor: '#FFFFFF',
+      overlayColor: 'rgba(0, 0, 0, 0.85)',
+      primaryColor: '#00FFF0',
+      zIndex: 10000,
+    },
+    tooltip: {
+      borderRadius: '0',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      fontFamily: 'Inter, sans-serif',
+    },
+    buttonNext: {
+      backgroundColor: '#00FFF0',
+      color: '#003733',
+      borderRadius: '0',
+      fontFamily: '"Space Grotesk", sans-serif',
+      fontWeight: 'bold',
+      textTransform: 'uppercase' as any,
+    },
+    buttonBack: {
+      color: '#94a3b8',
+      fontFamily: '"Space Grotesk", sans-serif',
+    },
+  };
 
   useEffect(() => {
     // Initialize WebSocket connection
@@ -217,6 +276,14 @@ export function LiveLinkView({ onNext, voiceId, targetLang, roomId, userProfile,
       exit={{ opacity: 0 }}
       className="relative h-screen w-full flex flex-col items-center justify-center overflow-hidden pt-20"
     >
+      {/* @ts-ignore - React Joyride prop typings mismatch */}
+      <Joyride
+        steps={steps}
+        run={runTour}
+        continuous={true}
+        styles={tourStyles}
+        callback={handleJoyrideCallback}
+      />
       {/* Background Energy Grid */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary-cyan/20 via-transparent to-transparent"></div>
@@ -235,7 +302,7 @@ export function LiveLinkView({ onNext, voiceId, targetLang, roomId, userProfile,
             </div>
           </div>
           <div className="text-center mt-2 md:mt-0">
-            <p className="font-mono text-[10px] md:text-xs text-primary-cyan/60 mb-1">ROOM: {roomId}</p>
+            <p className="tour-room-id font-mono text-[10px] md:text-xs text-primary-cyan/60 mb-1">ROOM: {roomId}</p>
             <h2 className="font-space text-xl md:text-2xl font-bold tracking-tighter text-white">YOU</h2>
           </div>
         </div>
@@ -332,7 +399,7 @@ export function LiveLinkView({ onNext, voiceId, targetLang, roomId, userProfile,
             onMouseLeave={stopPTT}
             onTouchStart={startPTT}
             onTouchEnd={stopPTT}
-            className={`flex flex-1 md:flex-none items-center justify-center font-space font-bold uppercase tracking-tighter px-4 md:px-8 h-12 md:h-14 rounded-full transition-all active:scale-95 ${isRecording ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.5)]' : 'bg-surface-high text-white hover:bg-white hover:text-black hover:shadow-[0_0_15px_rgba(255,255,255,0.2)]'}`}
+            className={`tour-ptt-btn flex flex-1 md:flex-none items-center justify-center font-space font-bold uppercase tracking-tighter px-4 md:px-8 h-12 md:h-14 rounded-full transition-all active:scale-95 ${isRecording ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.5)]' : 'bg-surface-high text-white hover:bg-white hover:text-black hover:shadow-[0_0_15px_rgba(255,255,255,0.2)]'}`}
           >
             <Mic size={18} className={`mr-2 md:mr-2 ${isRecording ? 'animate-pulse text-red-500' : ''}`} />
             <span className="text-[10px] md:text-sm">{isRecording ? 'TRANSMITTING...' : 'HOLD TO TALK'}</span>
